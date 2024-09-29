@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:expenzo/auth_service.dart';
 import 'package:expenzo/expense_service.dart';
@@ -38,6 +40,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
     'December'
   ];
 
+  Map<String, double> _typePercentages = {};
+
   @override
   void initState() {
     super.initState();
@@ -77,6 +81,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
         .fold(0, (sum, expense) => sum + expense.amount);
   }
 
+  void _calculateTypePercentages(List<Expense> expenses) {
+    Map<String, double> typeTotals = {};
+    double total = 0;
+
+    for (var expense in expenses) {
+      if (_selectedMonth == 'All' ||
+          DateFormat('MMMM').format(expense.date.toDate()) == _selectedMonth) {
+        typeTotals[expense.type] =
+            (typeTotals[expense.type] ?? 0) + expense.amount;
+        total += expense.amount;
+      }
+    }
+
+    _typePercentages = {};
+    typeTotals.forEach((type, amount) {
+      _typePercentages[type] = (amount / total) * 100;
+    });
+  }
+
   void _showExpenseDialog(Expense expense, int index) {
     showDialog(
       context: context,
@@ -88,12 +111,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(' Added \$${expense.amount.toStringAsFixed(2)}'),
-              //Text(' \$${expense.amount.toStringAsFixed(2)} '),
               Text(
                   ' on ${DateFormat('MMM d, y').format(expense.date.toDate())}'),
             ],
           ),
           actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                // _deleteExpense(index); // Delete expense
+              },
+              child: Text(
+                'Edit',
+                style: TextStyle(color: Colors.black),
+              ),
+            ),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Close dialog
@@ -108,18 +140,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
               onPressed: () {
                 // Handle the editing functionality here.
                 Navigator.of(context).pop(); // Close dialog
-                // Navigate to edit screen or show edit functionality.
               },
               child: Text(
-                'Edit',
-                style: TextStyle(color: Colors.blue),
+                'Close',
               ),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-              },
-              child: Text('Close'),
             ),
           ],
         );
@@ -130,7 +154,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xfff1f1f1),
       body: userId == null
           ? Center(child: CircularProgressIndicator())
           : StreamBuilder<List<Expense>>(
@@ -144,6 +167,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 }
                 List<Expense> expenses = snapshot.data!;
                 double totalExpense = _calculateTotal(expenses);
+                _calculateTypePercentages(expenses);
+
                 List<Expense> filteredExpenses = expenses
                     .where((e) =>
                         (_selectedType == 'All' || e.type == _selectedType) &&
@@ -151,96 +176,124 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             DateFormat('MMMM').format(e.date.toDate()) ==
                                 _selectedMonth))
                     .toList();
-                return Column(
-                  children: [
-                    SizedBox(height: 40), // Added space above the card
-                    Card(
-                      elevation: 8, // Shadow elevation
-                      margin: EdgeInsets.all(16), // Margin around the card
-                      shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(20), // Curved borders
-                      ),
-                      child: Container(height: 130,
-                        width: MediaQuery.of(context).size.width *
-                            0.9, // Set width to 90% of the screen width
-                        decoration: BoxDecoration(
-                          color: Colors.white
-                              .withOpacity(0.9), // Opacity for the card color
-                          borderRadius: BorderRadius.circular(
-                              20), // Matching curved borders for the container
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black26, // Shadow color
-                              blurRadius: 10, // Soft shadow radius
-                              offset: Offset(0, 4), // Shadow position
-                            ),
-                          ],
-                        ),
-                        child: Padding(
-                          padding:
-                              EdgeInsets.all(16), // Padding inside the card
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+
+                return CustomScrollView(
+                  slivers: [
+                    SliverAppBar(
+                      expandedHeight: 200,
+                      floating: false,
+                      pinned: true,
+                      flexibleSpace: FlexibleSpaceBar(
+                        collapseMode: CollapseMode.parallax,
+                        background: Container(
+                          decoration: BoxDecoration(color: Color(0xFF5C6BC0)
+                              // gradient: LinearGradient(
+                              //   colors: [Colors.white, Colors.blue],
+                              //   begin: Alignment.topRight,
+                              //   end: Alignment.bottomLeft,
+                              // ),
+                              ),
+                          child: Stack(
                             children: [
                               Center(
-                                child: Text(
-                                  'Total Expense',
-                                  style: TextStyle(fontSize: 18),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      '${"Your spendings :" + "\$" + totalExpense.toStringAsFixed(2)}',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    SizedBox(height: 20),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children:
+                                          _typePercentages.entries.map((entry) {
+                                        return Container(
+                                          padding: EdgeInsets.all(8),
+                                          // decoration: BoxDecoration(
+                                          //   color:
+                                          //       Colors.white.withOpacity(0.1),
+                                          //   // borderRadius:
+                                          //   //     BorderRadius.circular(10),
+                                          // ),
+                                          child: Column(
+                                            children: [
+                                              Text(
+                                                entry.key,
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                              Text(
+                                                '${entry.value.toStringAsFixed(1)}%',
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              SizedBox(height: 16),
-                              Text(
-                                '\$${totalExpense.toStringAsFixed(2)}',
-                                style: TextStyle(
-                                    fontSize: 24, fontWeight: FontWeight.bold),
                               ),
                             ],
                           ),
                         ),
                       ),
                     ),
-
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          DropdownButton<String>(
-                            value: _selectedMonth,
-                            items: _months.map((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                _selectedMonth = newValue!;
-                              });
-                            },
-                          ),
-                          DropdownButton<String>(
-                            value: _selectedType,
-                            items: _expenseTypes.map((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                _selectedType = newValue!;
-                              });
-                            },
-                          ),
-                        ],
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            DropdownButton<String>(
+                              value: _selectedMonth,
+                              items: _months.map((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                );
+                              }).toList(),
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  _selectedMonth = newValue!;
+                                });
+                              },
+                            ),
+                            DropdownButton<String>(
+                              value: _selectedType,
+                              items: _expenseTypes.map((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                );
+                              }).toList(),
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  _selectedType = newValue!;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: filteredExpenses.length,
-                        itemBuilder: (context, index) {
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
                           Expense expense = filteredExpenses[index];
                           return GestureDetector(
                             onTap: () {
@@ -268,6 +321,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             ),
                           );
                         },
+                        childCount: filteredExpenses.length,
                       ),
                     ),
                   ],
