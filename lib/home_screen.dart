@@ -49,24 +49,15 @@ class _HomeScreenState extends State<HomeScreen> {
             key: _formKey,
             child: Column(
               children: <Widget>[
-                SizedBox(height: 1),
-                Padding(
-                  padding: const EdgeInsets.only(left: 250.0),
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => AddFriendsScreen()),
-                      );
-                    },
-                    child: Text(
-                      'Add Friends',
-                      style: TextStyle(fontSize: 18, color: Color(0xFF5C6BC0)),
-                    ),
-                  ),
+                SizedBox(height: 10),
+                Text(
+                  "Add an Expense",
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF5C6BC0)),
                 ),
-                SizedBox(height: 120),
+                SizedBox(height: 50),
                 TextFormField(
                   decoration: InputDecoration(labelText: 'Amount'),
                   keyboardType: TextInputType.number,
