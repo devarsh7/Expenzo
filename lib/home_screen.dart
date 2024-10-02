@@ -16,7 +16,14 @@ class _HomeScreenState extends State<HomeScreen> {
   String _amount = '';
   String _description = '';
   String _expenseType = 'Groceries';
-  List<String> _expenseTypes = ['Groceries', 'Food', 'Personal', 'Shopping'];
+  List<Map<String, dynamic>> _expenseTypes = [
+    {'name': 'Groceries', 'icon': Icons.shopping_cart},
+    {'name': 'Food', 'icon': Icons.restaurant},
+    {'name': 'Personal', 'icon': Icons.person},
+    {'name': 'Shopping', 'icon': Icons.shopping_bag},
+    {'name': 'Gas', 'icon': Icons.local_gas_station},
+    {'name': 'Uncategorized', 'icon': Icons.category},
+  ];
 
   void _submitExpense() async {
     if (_formKey.currentState!.validate()) {
@@ -37,6 +44,57 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
     }
+  }
+
+  Widget _buildExpenseTypeGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        childAspectRatio: 1.0,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+      ),
+      itemCount: _expenseTypes.length,
+      itemBuilder: (context, index) {
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              _expenseType = _expenseTypes[index]['name'];
+            });
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: _expenseType == _expenseTypes[index]['name']
+                  ? Color(0xFF5C6BC0)
+                  : Colors.grey[200],
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  _expenseTypes[index]['icon'],
+                  color: _expenseType == _expenseTypes[index]['name']
+                      ? Colors.white
+                      : Colors.black,
+                ),
+                SizedBox(height: 5),
+                Text(
+                  _expenseTypes[index]['name'],
+                  style: TextStyle(
+                    color: _expenseType == _expenseTypes[index]['name']
+                        ? Colors.white
+                        : Colors.black,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -71,21 +129,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       value!.isEmpty ? 'Enter a description' : null,
                   onSaved: (value) => _description = value!,
                 ),
-                DropdownButtonFormField(
-                  value: _expenseType,
-                  items: _expenseTypes.map((type) {
-                    return DropdownMenuItem(
-                      value: type,
-                      child: Text(type),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _expenseType = value.toString();
-                    });
-                  },
-                  decoration: InputDecoration(labelText: 'Expense Type'),
+                SizedBox(height: 20),
+                Text(
+                  'Expense Type',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
+                SizedBox(height: 10),
+                _buildExpenseTypeGrid(),
                 SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,

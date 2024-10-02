@@ -22,7 +22,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     'Groceries',
     'Food',
     'Shopping',
-    'Personal'
+    'Personal',
+    'Gas',
+    'Uncategorized'
   ];
   final List<String> _months = [
     'All',
@@ -58,8 +60,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Future<void> _deleteExpense(int index) async {
     if (userId == null) return;
+    print("Usrid:  $userId");
+    print("Exception $e");
 
     try {
+      print("inside try block");
       await _expenseService.deleteExpense(userId!, index);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Expense deleted successfully')),
@@ -151,6 +156,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+  IconData _getIconForExpenseType(String type) {
+    switch (type) {
+      case 'Groceries':
+        return Icons.shopping_cart;
+      case 'Food':
+        return Icons.restaurant;
+      case 'Shopping':
+        return Icons.shopping_bag;
+      case 'Personal':
+        return Icons.person;
+      case 'Gas':
+        return Icons.local_gas_station;
+      case 'Uncategorized':
+      default:
+        return Icons.category;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -179,79 +202,79 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
                 return CustomScrollView(
                   slivers: [
-                    SliverAppBar(
-                      expandedHeight: 200,
-                      floating: false,
-                      pinned: true,
-                      flexibleSpace: FlexibleSpaceBar(
-                        collapseMode: CollapseMode.parallax,
-                        background: Container(
-                          decoration: BoxDecoration(color: Color(0xFF5C6BC0)
-                              // gradient: LinearGradient(
-                              //   colors: [Colors.white, Colors.blue],
-                              //   begin: Alignment.topRight,
-                              //   end: Alignment.bottomLeft,
-                              // ),
-                              ),
-                          child: Stack(
-                            children: [
-                              Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      '${"Your spendings :" + "\$" + totalExpense.toStringAsFixed(2)}',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    SizedBox(height: 20),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children:
-                                          _typePercentages.entries.map((entry) {
-                                        return Container(
-                                          padding: EdgeInsets.all(8),
-                                          // decoration: BoxDecoration(
-                                          //   color:
-                                          //       Colors.white.withOpacity(0.1),
-                                          //   // borderRadius:
-                                          //   //     BorderRadius.circular(10),
-                                          // ),
-                                          child: Column(
-                                            children: [
-                                              Text(
-                                                entry.key,
-                                                style: TextStyle(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              Text(
-                                                '${entry.value.toStringAsFixed(1)}%',
-                                                style: TextStyle(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      }).toList(),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
+                    // SliverAppBar(
+                    //   expandedHeight: 200,
+                    //   floating: false,
+                    //   pinned: true,
+                    //   flexibleSpace: FlexibleSpaceBar(
+                    //     collapseMode: CollapseMode.parallax,
+                    //     background: Container(
+                    //       decoration: BoxDecoration(color: Color(0xFF5C6BC0)
+                    //           // gradient: LinearGradient(
+                    //           //   colors: [Colors.white, Colors.blue],
+                    //           //   begin: Alignment.topRight,
+                    //           //   end: Alignment.bottomLeft,
+                    //           // ),
+                    //           ),
+                    //       child: Stack(
+                    //         children: [
+                    //           Center(
+                    //             child: Column(
+                    //               mainAxisAlignment: MainAxisAlignment.center,
+                    //               children: [
+                    //                 Text(
+                    //                   '${"Your spendings :" + "\$" + totalExpense.toStringAsFixed(2)}',
+                    //                   style: TextStyle(
+                    //                     fontSize: 20,
+                    //                     fontWeight: FontWeight.bold,
+                    //                     color: Colors.white,
+                    //                   ),
+                    //                 ),
+                    //                 SizedBox(height: 20),
+                    //                 Row(
+                    //                   mainAxisAlignment:
+                    //                       MainAxisAlignment.spaceEvenly,
+                    //                   children:
+                    //                       _typePercentages.entries.map((entry) {
+                    //                     return Container(
+                    //                       padding: EdgeInsets.all(8),
+                    //                       // decoration: BoxDecoration(
+                    //                       //   color:
+                    //                       //       Colors.white.withOpacity(0.1),
+                    //                       //   // borderRadius:
+                    //                       //   //     BorderRadius.circular(10),
+                    //                       // ),
+                    //                       child: Column(
+                    //                         children: [
+                    //                           Text(
+                    //                             entry.key,
+                    //                             style: TextStyle(
+                    //                               fontSize: 15,
+                    //                               fontWeight: FontWeight.bold,
+                    //                               color: Colors.white,
+                    //                             ),
+                    //                           ),
+                    //                           Text(
+                    //                             '${entry.value.toStringAsFixed(1)}%',
+                    //                             style: TextStyle(
+                    //                               fontSize: 15,
+                    //                               fontWeight: FontWeight.bold,
+                    //                               color: Colors.white,
+                    //                             ),
+                    //                           ),
+                    //                         ],
+                    //                       ),
+                    //                     );
+                    //                   }).toList(),
+                    //                 ),
+                    //               ],
+                    //             ),
+                    //           ),
+                    //         ],
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
@@ -307,8 +330,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   backgroundColor: Colors.primaries[
                                       expense.type.hashCode %
                                           Colors.primaries.length],
-                                  child: Icon(Icons.attach_money,
-                                      color: Colors.white),
+                                  child: Icon(
+                                    _getIconForExpenseType(expense.type),
+                                    color: Colors.white,
+                                  ),
                                 ),
                                 title: Text(expense.description),
                                 subtitle: Text(

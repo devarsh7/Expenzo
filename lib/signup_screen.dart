@@ -1,3 +1,4 @@
+import 'package:expenzo/budget&bills/budget_intro_page.dart';
 import 'package:expenzo/login_screen.dart';
 import 'package:expenzo/navigation_bar.dart';
 import 'package:flutter/material.dart';
@@ -34,7 +35,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       if (result == 'success') {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => MainContainer()),
+          MaterialPageRoute(builder: (context) => BudgetIntroPage()),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

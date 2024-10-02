@@ -1,4 +1,6 @@
 import 'package:expenzo/analytics.dart';
+import 'package:expenzo/budget&bills/budget_added.dart';
+import 'package:expenzo/dashboard.dart';
 import 'package:expenzo/reports_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
@@ -14,8 +16,10 @@ class MainContainer extends StatefulWidget {
 class _MainContainerState extends State<MainContainer> {
   int _currentIndex = 0;
   final List<Widget> _children = [
-    HomeScreen(),
+    BudgetDashboard(),
     ReportsScreen(),
+    HomeScreen(),
+    BudgetEntryPage(),
     SettingsScreen(),
   ];
 
@@ -38,6 +42,9 @@ class _MainContainerState extends State<MainContainer> {
         items: <Widget>[
           Icon(Icons.home, size: 30, color: Colors.white),
           Icon(Icons.analytics_outlined, size: 30, color: Colors.white),
+          Icon(Icons.add, size: 30, color: Colors.white), // New "+" icon
+          Icon(Icons.account_balance_wallet,
+              size: 30, color: Colors.white), // New budget icon
           Icon(Icons.settings, size: 30, color: Colors.white),
         ],
         color: Color(0xFF5C6BC0),

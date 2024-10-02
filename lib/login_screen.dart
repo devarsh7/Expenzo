@@ -1,4 +1,9 @@
+import 'package:expenzo/budget&bills/bills_budget_page.dart';
+import 'package:expenzo/budget&bills/budget_added.dart';
+import 'package:expenzo/budget&bills/budget_intro_page.dart';
+import 'package:expenzo/dashboard.dart';
 import 'package:expenzo/navigation_bar.dart';
+import 'package:expenzo/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:expenzo/auth_service.dart';
 import 'package:expenzo/signup_screen.dart';
@@ -23,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (user != null) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => MainContainer()),
+          MaterialPageRoute(builder: (context) => SplashScreen()),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

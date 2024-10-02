@@ -37,6 +37,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     Colors.red,
     Colors.green,
     Colors.yellow,
+    Colors.orange,
+    Colors.deepPurple
   ];
 
   @override
@@ -92,7 +94,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
       body: userId == null
           ? Center(child: CircularProgressIndicator())
           : StreamBuilder<List<Expense>>(
@@ -110,7 +111,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 return Column(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.only(left: 200.0),
                       child: DropdownButton<String>(
                         value: _selectedMonth,
                         items: _months.map((String value) {

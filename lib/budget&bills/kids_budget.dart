@@ -1,25 +1,31 @@
-import 'package:expenzo/budget&bills/bills_budget_page.dart';
-import 'package:expenzo/budget&bills/budget_service.dart';
+import 'package:expenzo/budget&bills/budget_added.dart';
 import 'package:flutter/material.dart';
+import 'package:expenzo/budget&bills/budget_service.dart';
 import 'package:expenzo/auth_service.dart';
 import 'package:intl/intl.dart';
 
-class HousingBudgetPage extends StatefulWidget {
+class KidsExpensesPage extends StatefulWidget {
   @override
-  _HousingBudgetPageState createState() => _HousingBudgetPageState();
+  _KidsExpensesPageState createState() => _KidsExpensesPageState();
 }
 
-class _HousingBudgetPageState extends State<HousingBudgetPage> {
+class _KidsExpensesPageState extends State<KidsExpensesPage> {
   final AuthService _auth = AuthService();
   final BudgetService _budgetService = BudgetService();
 
-  String _selectedOption = '';
+  String _selectedExpense = '';
   double _amount = 0;
   String _frequency = 'every month';
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
 
-  final List<String> _housingOptions = ['Mortgage', 'Rent', 'None'];
+  final List<String> _expenseOptions = [
+    'Daycare',
+    'School Lunch',
+    'Child Support',
+    'Classes',
+    'Others'
+  ];
 
   final List<String> _frequencyOptions = [
     'every week',
@@ -45,7 +51,7 @@ class _HousingBudgetPageState extends State<HousingBudgetPage> {
               right: 0,
               child: Center(
                 child: Image.asset(
-                  'assets\\housing.png',
+                  'assets\\budgetimg.png',
                   height: 200,
                   width: 200,
                   fit: BoxFit.contain,
@@ -77,23 +83,23 @@ class _HousingBudgetPageState extends State<HousingBudgetPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Select your housing type:',
+                      Text('Select kids expense type:',
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold)),
                       SizedBox(height: 15),
                       Wrap(
                         spacing: 10,
                         runSpacing: 10,
-                        children: _housingOptions
-                            .map((option) => ElevatedButton(
-                                  child: Text(option),
+                        children: _expenseOptions
+                            .map((expense) => ElevatedButton(
+                                  child: Text(expense),
                                   onPressed: () =>
-                                      setState(() => _selectedOption = option),
+                                      setState(() => _selectedExpense = expense),
                                   style: ElevatedButton.styleFrom(
-                                    primary: _selectedOption == option
+                                    primary: _selectedExpense == expense
                                         ? Color(0xFF5C6BC0)
                                         : Colors.grey[300],
-                                    onPrimary: _selectedOption == option
+                                    onPrimary: _selectedExpense == expense
                                         ? Colors.white
                                         : Colors.black87,
                                     padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -106,7 +112,7 @@ class _HousingBudgetPageState extends State<HousingBudgetPage> {
                             .toList(),
                       ),
                       SizedBox(height: 25),
-                      if (_selectedOption.isNotEmpty && _selectedOption != 'None') ...[
+                      if (_selectedExpense.isNotEmpty) ...[
                         TextFormField(
                           decoration: InputDecoration(
                             labelText: 'Amount',
@@ -185,33 +191,43 @@ class _HousingBudgetPageState extends State<HousingBudgetPage> {
                             onPressed: _isLoading
                                 ? null
                                 : () async {
-                                    if (_selectedOption.isNotEmpty) {
+                                    if (_selectedExpense.isNotEmpty &&
+                                        _amount > 0) {
                                       setState(() {
                                         _isLoading = true;
                                       });
                                       try {
-                                        String? userId = await _auth.getCurrentUserId();
+                                        String? userId =
+                                            await _auth.getCurrentUserId();
                                         if (userId != null) {
-                                          if (_selectedOption == 'None') {
-                                            await _budgetService.updateHousingBudget(
-                                                userId, 'NA', 0, 'NA', DateTime.now());
-                                          } else {
-                                            await _budgetService.updateHousingBudget(
-                                                userId, _selectedOption, _amount, _frequency, _selectedDate);
-                                          }
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text('Housing budget updated successfully')),
+                                          await _budgetService.checkAndInitializeKidsDocument(userId);
+                                          await _budgetService.addKidsEntry(
+                                              userId,
+                                              _selectedExpense,
+                                              _amount,
+                                              _frequency,
+                                              _selectedDate);
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(
+                                                content: Text(
+                                                    'Kids expense added successfully')),
                                           );
+                                          // Navigate to the next page or close this one
+                                          Navigator.pop(context);
                                           Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                  builder: ((context) => BillsBudgetPage())));
+                                  context,
+                                  MaterialPageRoute(builder: (context) => BudgetEntryPage()));
+                              Navigator.pop(context);
                                         } else {
                                           throw Exception('User not logged in');
                                         }
                                       } catch (e) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('Error: ${e.toString()}')),
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                              content: Text(
+                                                  'Error: ${e.toString()}')),
                                         );
                                       } finally {
                                         setState(() {
@@ -219,8 +235,11 @@ class _HousingBudgetPageState extends State<HousingBudgetPage> {
                                         });
                                       }
                                     } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('Please select a housing option')),
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                            content: Text(
+                                                'Please select an expense type and enter an amount')),
                                       );
                                     }
                                   },
@@ -238,8 +257,8 @@ class _HousingBudgetPageState extends State<HousingBudgetPage> {
                             onPressed: () {
                               Navigator.push(
                                   context,
-                                  MaterialPageRoute(
-                                      builder: ((context) => BillsBudgetPage())));
+                                  MaterialPageRoute(builder: (context) => BudgetEntryPage()));
+                              Navigator.pop(context);
                             },
                             style: ElevatedButton.styleFrom(
                               primary: Color(0xFF5C6BC0),
