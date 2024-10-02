@@ -1,5 +1,4 @@
-import 'package:expenzo/home_screen.dart';
-import 'package:expenzo/settings_screen.dart';
+import 'package:expenzo/FixedExpensesPages/gridviewdashboard.dart';
 import 'package:flutter/material.dart';
 import 'package:expenzo/budget&bills/budget_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -20,6 +19,7 @@ class _BudgetDashboardState extends State<BudgetDashboard>
   String? userId;
   double budget = 0.0;
   double totalExpenses = 0.0;
+  double fixedExpenses = 0.0;
   late AnimationController _animationController;
 
   @override
@@ -28,7 +28,7 @@ class _BudgetDashboardState extends State<BudgetDashboard>
     _animationController = AnimationController(
       vsync: this,
       duration: Duration(seconds: 2),
-    )..repeat(reverse: true); // Initialize the AnimationController here
+    )..repeat(reverse: true);
     _getUserId();
   }
 
@@ -40,6 +40,7 @@ class _BudgetDashboardState extends State<BudgetDashboard>
       });
       if (userId != null) {
         _fetchBudgetAndExpenses();
+        _fetchFixedExpenses();
       }
     } catch (e) {
       print('Error fetching user ID: $e');
@@ -86,9 +87,69 @@ class _BudgetDashboardState extends State<BudgetDashboard>
     }
   }
 
+  void _fetchFixedExpenses() async {
+    try {
+      print('Starting _fetchFixedExpenses');
+      DateTime now = DateTime.now();
+      DateTime firstDayOfMonth = DateTime(now.year, now.month, 1);
+      DateTime lastDayOfMonth = DateTime(now.year, now.month + 1, 1);
+      print(
+          'Date range: ${firstDayOfMonth.toString()} to ${lastDayOfMonth.toString()}');
+
+      List<String> collections = [
+        'Housing',
+        'Bills',
+        'Loan',
+        'Subscriptions',
+        'HealthandFitness',
+        'Education',
+        'Kids'
+      ];
+      double total = 0.0;
+
+      for (String collection in collections) {
+        double amount = await _budgetService.getAmountForCollection(
+            userId!, collection, firstDayOfMonth, lastDayOfMonth);
+        total += amount;
+        print('Added $amount from $collection. New total: $total');
+
+        // Debug: Print the documents in each collection
+        await _printCollectionDocuments(
+            collection, firstDayOfMonth, lastDayOfMonth);
+      }
+
+      print('Final total fixed expenses: $total');
+      setState(() {
+        fixedExpenses = total;
+      });
+      print('State updated. fixedExpenses: $fixedExpenses');
+    } catch (e) {
+      print('Error fetching fixed expenses: $e');
+    }
+  }
+
+  Future<void> _printCollectionDocuments(
+      String collection, DateTime start, DateTime end) async {
+    try {
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('UserBudget')
+          .doc(userId)
+          .collection(collection)
+          .where('Date', isGreaterThanOrEqualTo: start)
+          .where('Date', isLessThan: end)
+          .get();
+
+      print('Documents in $collection:');
+      querySnapshot.docs.forEach((doc) {
+        print('Document ID: ${doc.id}, Data: ${doc.data()}');
+      });
+    } catch (e) {
+      print('Error printing documents for $collection: $e');
+    }
+  }
+
   @override
   void dispose() {
-    // Ensure the animation controller is disposed of only if it's initialized
     if (_animationController.isAnimating) {
       _animationController.dispose();
     }
@@ -97,92 +158,118 @@ class _BudgetDashboardState extends State<BudgetDashboard>
 
   @override
   Widget build(BuildContext context) {
-    double remainingBudget = budget - totalExpenses;
-    double progress = budget > 0 ? totalExpenses / budget : 0.0;
+    double remainingBudget = budget - totalExpenses - fixedExpenses;
+    double progress =
+        budget > 0 ? (totalExpenses + fixedExpenses) / budget : 0.0;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Dashboard'),
-        backgroundColor: Color(0xFF5C6BC0),
-      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              // Main Card with CircularProgressIndicator
-              Card(
-                color: Color.fromARGB(255, 26, 28, 44),
-                elevation: 8,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20)),
-                child: AnimatedContainer(
-                  duration: Duration(milliseconds: 300),
-                  height: MediaQuery.of(context).size.height * 0.5,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 5,
-                        spreadRadius: 2,
-                      )
-                    ],
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Center(
-                        child: AnimatedBuilder(
-                          animation: _animationController,
-                          builder: (context, child) {
-                            return Container(
-                              height: 250,
-                              width: 250,
-                              child: CircularProgressIndicator(
-                                value: progress,
-                                strokeWidth: 15,
-                                backgroundColor: Colors.white.withOpacity(0.3),
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  progress > 1 ? Colors.red : Colors.green,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      Positioned(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(height: 10),
-                            Text(
-                              '\$${remainingBudget.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                color: progress > 1 ? Colors.red : Colors.green,
-                                fontSize: 30,
-                                fontWeight: FontWeight.bold,
+              SizedBox(height: 50), // Add some top padding
+              AnimatedContainer(
+                duration: Duration(milliseconds: 300),
+                height: MediaQuery.of(context).size.height * 0.5,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: Color.fromARGB(255, 26, 25, 27),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color.fromARGB(255, 110, 130, 246),
+                      spreadRadius: 2,
+                    )
+                  ],
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Center(
+                      child: AnimatedBuilder(
+                        animation: _animationController,
+                        builder: (context, child) {
+                          return Container(
+                            height: 250,
+                            width: 250,
+                            child: CircularProgressIndicator(
+                              value: progress,
+                              strokeWidth: 15,
+                              backgroundColor: Colors.white.withOpacity(0.3),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                progress > 1 ? Colors.red : Colors.green,
                               ),
                             ),
-                          ],
-                        ),
+                          );
+                        },
                       ),
-                    ],
-                  ),
+                    ),
+                    Positioned(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '\$${remainingBudget.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              color: progress > 1
+                                  ? Color(0xFFEF5350)
+                                  : Color(0xFF66BB6A),
+                              fontSize: 30,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 10),
+                          Text(
+                            'Safe to Spend',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-
               SizedBox(height: 20),
-
-              // Budget, Expenses, and Savings in Containers
               _buildStatTile(
-                  'Budget', '\$${budget.toStringAsFixed(2)}', Colors.blue),
+                  'Budget', '\$${budget.toStringAsFixed(2)}', Colors.blue, () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: ((context) => FixedExpensesGridPage()),
+                    ));
+              }),
               SizedBox(height: 10),
-              _buildStatTile('Expenses',
-                  '\$${totalExpenses.toStringAsFixed(2)}', Colors.redAccent),
+              _buildStatTile(
+                  'Expenses',
+                  '\$${totalExpenses.toStringAsFixed(2)}',
+                  Colors.redAccent, () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: ((context) => FixedExpensesGridPage()),
+                    ));
+              }),
               SizedBox(height: 10),
-              _buildStatTile('Savings',
-                  '\$${remainingBudget.toStringAsFixed(2)}', Colors.green),
+              _buildStatTile('Fixed Expenses',
+                  '\$${fixedExpenses.toStringAsFixed(2)}', Colors.orange, () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: ((context) => FixedExpensesGridPage()),
+                    ));
+              }),
+              SizedBox(height: 10),
+              _buildStatTile('Remaining',
+                  '\$${remainingBudget.toStringAsFixed(2)}', Colors.green, () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: ((context) => FixedExpensesGridPage()),
+                    ));
+              }),
             ],
           ),
         ),
@@ -190,34 +277,38 @@ class _BudgetDashboardState extends State<BudgetDashboard>
     );
   }
 
-  Widget _buildStatTile(String title, String value, Color color) {
-    return Container(
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.3), width: 2),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: color,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+  Widget _buildStatTile(
+      String title, String value, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withOpacity(0.3), width: 2),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                color: color,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+            Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
