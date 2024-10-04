@@ -21,7 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String _email = '';
   String _password = '';
 
-   void _submit() async {
+  void _submit() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       final user = await _auth.signIn(_email, _password);
@@ -110,7 +110,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
-                          child: Text('Forgot your Password?'),
+                          child: Text(
+                            'Forgot your Password?',
+                            style: TextStyle(color: Color(0xFF5C6BC0)),
+                          ),
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -155,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               " Sign Up",
                               style: TextStyle(
                                 fontSize: 14.0,
-                                color: Colors.blue,
+                                color: Color(0xFF5C6BC0),
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
