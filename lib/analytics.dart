@@ -15,30 +15,21 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   final ExpenseService _expenseService = ExpenseService();
   String? userId;
   String _selectedMonth = 'All';
+  String _selectedWeek = 'All';
+  String _selectedDay = 'All';
+
   final List<String> _months = [
-    'All',
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December'
+    'All', 'January', 'February', 'March', 'April', 'May', 'June', 'July',
+    'August', 'September', 'October', 'November', 'December'
   ];
+
+  final List<String> _weeks = ['All', 'Week 1', 'Week 2', 'Week 3', 'Week 4'];
+  final List<String> _days = ['All'] + List.generate(31, (index) => 'Day ${index + 1}');
 
   Map<String, double> _typePercentages = {};
   List<Color> _colors = [
-    Colors.blue,
-    Colors.red,
-    Colors.green,
-    Colors.yellow,
-    Colors.orange,
-    Colors.deepPurple
+    Colors.blue, Colors.red, Colors.green, Colors.yellow,
+    Colors.orange, Colors.deepPurple
   ];
 
   @override
@@ -60,10 +51,16 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     double total = 0;
 
     for (var expense in expenses) {
-      if (_selectedMonth == 'All' ||
-          DateFormat('MMMM').format(expense.date.toDate()) == _selectedMonth) {
-        typeTotals[expense.type] =
-            (typeTotals[expense.type] ?? 0) + expense.amount;
+      final expenseDate = expense.date.toDate();
+      final monthMatch = _selectedMonth == 'All' ||
+          DateFormat('MMMM').format(expenseDate) == _selectedMonth;
+      final weekMatch = _selectedWeek == 'All' ||
+          (_getWeekOfMonth(expenseDate) == _selectedWeek);
+      final dayMatch = _selectedDay == 'All' ||
+          DateFormat('d').format(expenseDate) == _selectedDay.replaceAll('Day ', '');
+
+      if (monthMatch && weekMatch && dayMatch) {
+        typeTotals[expense.type] = (typeTotals[expense.type] ?? 0) + expense.amount;
         total += expense.amount;
       }
     }
@@ -72,6 +69,14 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     typeTotals.forEach((type, amount) {
       _typePercentages[type] = (amount / total) * 100;
     });
+  }
+
+  String _getWeekOfMonth(DateTime date) {
+    int day = date.day;
+    if (day <= 7) return 'Week 1';
+    if (day <= 14) return 'Week 2';
+    if (day <= 21) return 'Week 3';
+    return 'Week 4';
   }
 
   List<PieChartSectionData> _getSections() {
@@ -103,7 +108,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   return Center(child: CircularProgressIndicator());
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(child: Text('No expenses found'));
+                  return Center(child: Text('First add an expense'));
                 }
                 List<Expense> expenses = snapshot.data!;
                 _calculateTypePercentages(expenses);
@@ -111,53 +116,105 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 return Column(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.only(left: 200.0),
-                      child: DropdownButton<String>(
-                        value: _selectedMonth,
-                        items: _months.map((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            _selectedMonth = newValue!;
-                          });
-                        },
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: DropdownButton<String>(
+                                value: _selectedMonth,
+                                items: _months.map((String value) {
+                                  return DropdownMenuItem<String>(
+                                    value: value,
+                                    child: Text(value),
+                                  );
+                                }).toList(),
+                                onChanged: (String? newValue) {
+                                  setState(() {
+                                    _selectedMonth = newValue!;
+                                  });
+                                },
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: DropdownButton<String>(
+                                value: _selectedWeek,
+                                items: _weeks.map((String value) {
+                                  return DropdownMenuItem<String>(
+                                    value: value,
+                                    child: Text(value),
+                                  );
+                                }).toList(),
+                                onChanged: (String? newValue) {
+                                  setState(() {
+                                    _selectedWeek = newValue!;
+                                  });
+                                },
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: DropdownButton<String>(
+                                value: _selectedDay,
+                                items: _days.map((String value) {
+                                  return DropdownMenuItem<String>(
+                                    value: value,
+                                    child: Text(value),
+                                  );
+                                }).toList(),
+                                onChanged: (String? newValue) {
+                                  setState(() {
+                                    _selectedDay = newValue!;
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
+                    SizedBox(height: 10),
                     Expanded(
-                      child: PieChart(
-                        PieChartData(
-                          sections: _getSections(),
-                          sectionsSpace: 0,
-                          centerSpaceRadius: 40,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                        child: PieChart(
+                          PieChartData(
+                            sections: _getSections(),
+                            sectionsSpace: 0,
+                            centerSpaceRadius: 40,
+                          ),
                         ),
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
-                        children: _typePercentages.entries.map((entry) {
-                          final index =
-                              _typePercentages.keys.toList().indexOf(entry.key);
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4.0),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 20,
-                                  height: 20,
-                                  color: _colors[index % _colors.length],
+                        children: [
+                          Wrap(
+                            spacing: 16,
+                            runSpacing: 8,
+                            children: _typePercentages.entries.map((entry) {
+                              final index = _typePercentages.keys.toList().indexOf(entry.key);
+                              return SizedBox(
+                                width: MediaQuery.of(context).size.width / 3 - 20,
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 20,
+                                      height: 20,
+                                      color: _colors[index % _colors.length],
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text('${entry.key}: ${entry.value.toStringAsFixed(1)}%'),
+                                  ],
                                 ),
-                                SizedBox(width: 8),
-                                Text(
-                                    '${entry.key}: ${entry.value.toStringAsFixed(1)}%'),
-                              ],
-                            ),
-                          );
-                        }).toList(),
+                              );
+                            }).toList(),
+                          ),
+                        ],
                       ),
                     ),
                   ],
