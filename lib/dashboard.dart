@@ -168,78 +168,81 @@ class _BudgetDashboardState extends State<BudgetDashboard>
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              SizedBox(height: 50), // Add some top padding
-              AnimatedContainer(
-                duration: Duration(milliseconds: 300),
+              // SizedBox(height: 10),
+              Container(
                 height: MediaQuery.of(context).size.height * 0.5,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  color: Color.fromARGB(255, 26, 25, 27),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color.fromARGB(255, 110, 130, 246),
-                      spreadRadius: 2,
-                    )
-                  ],
-                ),
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    Center(
-                      child: AnimatedBuilder(
-                        animation: _animationController,
-                        builder: (context, child) {
-                          return Container(
-                            height: 250,
-                            width: 250,
-                            child: CircularProgressIndicator(
-                              value: progress,
-                              strokeWidth: 15,
-                              backgroundColor: Colors.white.withOpacity(0.3),
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                progress > 1 ? Colors.red : Colors.green,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    Positioned(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '\$${remainingBudget.toStringAsFixed(2)}',
-                            style: TextStyle(
-                              color: progress > 1
-                                  ? Color(0xFFEF5350)
-                                  : Color(0xFF66BB6A),
-                              fontSize: 30,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 10),
-                          Text(
-                            'Safe to Spend',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                            ),
+                    // Black circular container for 3D effect
+                    Container(
+                      height: 260,
+                      width: 260,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.black,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.5),
+                            spreadRadius: 5,
+                            blurRadius: 10,
+                            offset: Offset(0, 5),
                           ),
                         ],
                       ),
                     ),
+                    // Circular progress indicator
+                    AnimatedBuilder(
+                      animation: _animationController,
+                      builder: (context, child) {
+                        return Container(
+                          height: 250,
+                          width: 250,
+                          child: CircularProgressIndicator(
+                            value: progress,
+                            strokeWidth: 15,
+                            backgroundColor: Colors.white.withOpacity(0.3),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              progress > 1 ? Colors.red : Colors.green,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    // Text in the center
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '\$${remainingBudget.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            color: progress > 1
+                                ? Color(0xFFEF5350)
+                                : Color(0xFF66BB6A),
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          progress > 1 ? 'Over Budget' : 'Safe to Spend',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 10),
               _buildStatTile(
                   'Budget', '\$${budget.toStringAsFixed(2)}', Colors.blue, () {
                 Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: ((context) => FixedExpensesGridPage()),
-                    ));
+                        builder: (context) => FixedExpensesGridPage()));
               }),
               SizedBox(height: 10),
               _buildStatTile(
@@ -249,8 +252,7 @@ class _BudgetDashboardState extends State<BudgetDashboard>
                 Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: ((context) => FixedExpensesGridPage()),
-                    ));
+                        builder: (context) => FixedExpensesGridPage()));
               }),
               SizedBox(height: 10),
               _buildStatTile('Fixed Expenses',
@@ -258,8 +260,7 @@ class _BudgetDashboardState extends State<BudgetDashboard>
                 Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: ((context) => FixedExpensesGridPage()),
-                    ));
+                        builder: (context) => FixedExpensesGridPage()));
               }),
               SizedBox(height: 10),
               _buildStatTile('Remaining',
@@ -267,8 +268,7 @@ class _BudgetDashboardState extends State<BudgetDashboard>
                 Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: ((context) => FixedExpensesGridPage()),
-                    ));
+                        builder: (context) => FixedExpensesGridPage()));
               }),
             ],
           ),
