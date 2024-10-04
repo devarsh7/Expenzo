@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:expenzo/auth_service.dart';
 import 'package:expenzo/expense_service.dart';
@@ -17,6 +18,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   String? userId;
   String _selectedType = 'All';
   String _selectedMonth = 'All';
+  String _selectedDay = 'All'; // New variable for day filter
   final List<String> _expenseTypes = [
     'All',
     'Groceries',
@@ -42,6 +44,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
     'December'
   ];
 
+  final List<String> _days = [
+    'All',
+    for (var i = 1; i <= 31; i++) i.toString(), // Dynamically generate days
+  ];
+
   Map<String, double> _typePercentages = {};
 
   @override
@@ -60,15 +67,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Future<void> _deleteExpense(int index) async {
     if (userId == null) return;
-    print("Usrid:  $userId");
-    print("Exception $e");
-
     try {
-      print("inside try block");
       await _expenseService.deleteExpense(userId!, index);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Expense deleted successfully')),
       );
+      setState(() {}); // Refresh the UI
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to delete expense: $e')),
@@ -76,13 +80,29 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
+  Future<void> _updateExpense(int index, Expense updatedExpense) async {
+    if (userId == null) return;
+    try {
+      await _expenseService.updateExpense(userId!, index, updatedExpense);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Expense updated successfully')),
+      );
+      setState(() {}); // Refresh the UI
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update expense: $e')),
+      );
+    }
+  }
   double _calculateTotal(List<Expense> expenses) {
     return expenses
         .where((expense) =>
             (_selectedType == 'All' || expense.type == _selectedType) &&
             (_selectedMonth == 'All' ||
                 DateFormat('MMMM').format(expense.date.toDate()) ==
-                    _selectedMonth))
+                    _selectedMonth) &&
+            (_selectedDay == 'All' || 
+                DateFormat('d').format(expense.date.toDate()) == _selectedDay))
         .fold(0, (sum, expense) => sum + expense.amount);
   }
 
@@ -106,56 +126,119 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   void _showExpenseDialog(Expense expense, int index) {
+    final _formKey = GlobalKey<FormState>();
+    String _amount = expense.amount.toString();
+    String _description = expense.description;
+    String _type = expense.type;
+    DateTime _date = expense.date.toDate();
+
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text(expense.description),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(' Added \$${expense.amount.toStringAsFixed(2)}'),
-              Text(
-                  ' on ${DateFormat('MMM d, y').format(expense.date.toDate())}'),
-            ],
+          title: Text('Expense Details'),
+          content: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    initialValue: _amount,
+                    decoration: InputDecoration(labelText: 'Amount'),
+                    keyboardType: TextInputType.number,
+                    validator: (value) =>
+                        value!.isEmpty ? 'Enter an amount' : null,
+                    onSaved: (value) => _amount = value!,
+                  ),
+                  TextFormField(
+                    initialValue: _description,
+                    decoration: InputDecoration(labelText: 'Description'),
+                    validator: (value) =>
+                        value!.isEmpty ? 'Enter a description' : null,
+                    onSaved: (value) => _description = value!,
+                  ),
+                  DropdownButtonFormField<String>(
+                    value: _type,
+                    items: _expenseTypes.where((type) => type != 'All').map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _type = newValue!;
+                      });
+                    },
+                    decoration: InputDecoration(labelText: 'Type'),
+                  ),
+                  InkWell(
+                    onTap: () async {
+                      final DateTime? picked = await showDatePicker(
+                        context: context,
+                        initialDate: _date,
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime.now(),
+                      );
+                      if (picked != null && picked != _date) {
+                        setState(() {
+                          _date = picked;
+                        });
+                      }
+                    },
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'Date',
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          Text(DateFormat('MMM d, y').format(_date)),
+                          Icon(Icons.calendar_today),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-                // _deleteExpense(index); // Delete expense
+                Navigator.of(context).pop();
               },
-              child: Text(
-                'Edit',
-                style: TextStyle(color: Colors.black),
-              ),
+              child: Text('Cancel'),
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-                _deleteExpense(index); // Delete expense
+                if (_formKey.currentState!.validate()) {
+                  _formKey.currentState!.save();
+                  Expense updatedExpense = Expense(
+                    amount: double.parse(_amount),
+                    description: _description,
+                    type: _type,
+                    date: Timestamp.fromDate(_date),
+                  );
+                  _updateExpense(index, updatedExpense);
+                  Navigator.of(context).pop();
+                }
               },
-              child: Text(
-                'Delete',
-                style: TextStyle(color: Colors.red),
-              ),
+              child: Text('Save'),
             ),
             TextButton(
               onPressed: () {
-                // Handle the editing functionality here.
-                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pop();
+                _deleteExpense(index);
               },
-              child: Text(
-                'Close',
-              ),
+              child: Text('Delete', style: TextStyle(color: Colors.red)),
             ),
           ],
         );
       },
     );
   }
-
   IconData _getIconForExpenseType(String type) {
     switch (type) {
       case 'Groceries':
@@ -174,7 +257,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
-  @override
+   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: userId == null
@@ -197,84 +280,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         (_selectedType == 'All' || e.type == _selectedType) &&
                         (_selectedMonth == 'All' ||
                             DateFormat('MMMM').format(e.date.toDate()) ==
-                                _selectedMonth))
+                                _selectedMonth) &&
+                        (_selectedDay == 'All' ||
+                            DateFormat('d').format(e.date.toDate()) ==
+                                _selectedDay))
                     .toList();
 
                 return CustomScrollView(
                   slivers: [
-                    // SliverAppBar(
-                    //   expandedHeight: 200,
-                    //   floating: false,
-                    //   pinned: true,
-                    //   flexibleSpace: FlexibleSpaceBar(
-                    //     collapseMode: CollapseMode.parallax,
-                    //     background: Container(
-                    //       decoration: BoxDecoration(color: Color(0xFF5C6BC0)
-                    //           // gradient: LinearGradient(
-                    //           //   colors: [Colors.white, Colors.blue],
-                    //           //   begin: Alignment.topRight,
-                    //           //   end: Alignment.bottomLeft,
-                    //           // ),
-                    //           ),
-                    //       child: Stack(
-                    //         children: [
-                    //           Center(
-                    //             child: Column(
-                    //               mainAxisAlignment: MainAxisAlignment.center,
-                    //               children: [
-                    //                 Text(
-                    //                   '${"Your spendings :" + "\$" + totalExpense.toStringAsFixed(2)}',
-                    //                   style: TextStyle(
-                    //                     fontSize: 20,
-                    //                     fontWeight: FontWeight.bold,
-                    //                     color: Colors.white,
-                    //                   ),
-                    //                 ),
-                    //                 SizedBox(height: 20),
-                    //                 Row(
-                    //                   mainAxisAlignment:
-                    //                       MainAxisAlignment.spaceEvenly,
-                    //                   children:
-                    //                       _typePercentages.entries.map((entry) {
-                    //                     return Container(
-                    //                       padding: EdgeInsets.all(8),
-                    //                       // decoration: BoxDecoration(
-                    //                       //   color:
-                    //                       //       Colors.white.withOpacity(0.1),
-                    //                       //   // borderRadius:
-                    //                       //   //     BorderRadius.circular(10),
-                    //                       // ),
-                    //                       child: Column(
-                    //                         children: [
-                    //                           Text(
-                    //                             entry.key,
-                    //                             style: TextStyle(
-                    //                               fontSize: 15,
-                    //                               fontWeight: FontWeight.bold,
-                    //                               color: Colors.white,
-                    //                             ),
-                    //                           ),
-                    //                           Text(
-                    //                             '${entry.value.toStringAsFixed(1)}%',
-                    //                             style: TextStyle(
-                    //                               fontSize: 15,
-                    //                               fontWeight: FontWeight.bold,
-                    //                               color: Colors.white,
-                    //                             ),
-                    //                           ),
-                    //                         ],
-                    //                       ),
-                    //                     );
-                    //                   }).toList(),
-                    //                 ),
-                    //               ],
-                    //             ),
-                    //           ),
-                    //         ],
-                    //       ),
-                    //     ),
-                    //   ),
-                    // ),
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
@@ -293,6 +306,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
                               onChanged: (String? newValue) {
                                 setState(() {
                                   _selectedMonth = newValue!;
+                                });
+                              },
+                            ),
+                            DropdownButton<String>(
+                              value: _selectedDay, // Add day dropdown here
+                              items: _days.map((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                );
+                              }).toList(),
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  _selectedDay = newValue!;
                                 });
                               },
                             ),
@@ -328,8 +355,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                               child: ListTile(
                                 leading: CircleAvatar(
                                   backgroundColor: Colors.primaries[
-                                      expense.type.hashCode %
-                                          Colors.primaries.length],
+                                      expense.type.hashCode % 
+                                      Colors.primaries.length],
                                   child: Icon(
                                     _getIconForExpenseType(expense.type),
                                     color: Colors.white,
