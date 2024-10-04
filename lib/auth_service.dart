@@ -98,4 +98,35 @@ class AuthService {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('userId');
   }
+  Future<String> changePassword(String currentPassword, String newPassword) async {
+    try {
+      User? user = _auth.currentUser;
+      if (user == null) {
+        return 'No user is currently signed in';
+      }
+
+      // Create a credential with the current email and password
+      AuthCredential credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+
+      // Reauthenticate the user
+      await user.reauthenticateWithCredential(credential);
+
+      // Change the password
+      await user.updatePassword(newPassword);
+
+      return 'Password changed successfully';
+    } catch (e) {
+      print('Error changing password: $e');
+      if (e is FirebaseAuthException) {
+        if (e.code == 'wrong-password') {
+          return 'The current password is incorrect';
+        }
+      }
+      return 'Failed to change password: ${e.toString()}';
+    }
+  }
+
 }
