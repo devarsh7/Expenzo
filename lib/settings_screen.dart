@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:expenzo/changepassword.dart';
 import 'package:expenzo/settings_menus/contact_us.dart';
 import 'package:expenzo/settings_menus/profile.dart';
 import 'package:flutter/material.dart';
@@ -114,7 +115,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         icon: Icons.lock,
                         title: 'Change Password',
                         onTap: () {
-                          // Navigate to Change Password screen
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => ChangePasswordPage()));
                         },
                       ),
                       _buildSettingsItem(
