@@ -4,13 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:expenzo/budget&bills/budget_service.dart';
 import 'package:expenzo/auth_service.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class HealthAndFitnessPage extends StatefulWidget {
   @override
   _HealthAndFitnessPageState createState() => _HealthAndFitnessPageState();
 }
 
-class _HealthAndFitnessPageState extends State<HealthAndFitnessPage> {
+class _HealthAndFitnessPageState extends State<HealthAndFitnessPage> with SingleTickerProviderStateMixin {
   final AuthService _auth = AuthService();
   final BudgetService _budgetService = BudgetService();
 
@@ -19,6 +21,8 @@ class _HealthAndFitnessPageState extends State<HealthAndFitnessPage> {
   String _frequency = 'every month';
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
+
+  late AnimationController _animationController;
 
   final List<String> _healthOptions = [
     'Gym Membership', 'Supplements', 'Others'
@@ -30,6 +34,18 @@ class _HealthAndFitnessPageState extends State<HealthAndFitnessPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(vsync: this, duration: Duration(milliseconds: 500));
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFF5C6BC0),
@@ -37,20 +53,20 @@ class _HealthAndFitnessPageState extends State<HealthAndFitnessPage> {
         child: Stack(
           children: [
             Positioned(
-              top: 60,
+              top: 40,
               left: 0,
               right: 0,
               child: Center(
                 child: Image.asset(
-                  'assets\\health.png',
+                  'assets/health.png',
                   height: 200,
                   width: 200,
                   fit: BoxFit.contain,
                 ),
-              ),
+              ).animate().fadeIn(duration: 600.ms).scale(delay: 300.ms),
             ),
             Positioned(
-              top: 280,
+              top: 260,
               left: 0,
               right: 0,
               bottom: 0,
@@ -75,20 +91,24 @@ class _HealthAndFitnessPageState extends State<HealthAndFitnessPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Select health and fitness option:',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          style: GoogleFonts.poppins(
+                              fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF5C6BC0)))
+                        .animate().fadeIn(duration: 600.ms).slideX(begin: -0.2, end: 0),
                       SizedBox(height: 15),
                       Wrap(
                         spacing: 10,
                         runSpacing: 10,
                         children: _healthOptions
-                            .map((option) => ElevatedButton(
-                                  child: Text(option),
-                                  onPressed: () => setState(() => _selectedHealthOption = option),
+                            .asMap()
+                            .entries
+                            .map((entry) => ElevatedButton(
+                                  child: Text(entry.value),
+                                  onPressed: () => setState(() => _selectedHealthOption = entry.value),
                                   style: ElevatedButton.styleFrom(
-                                    primary: _selectedHealthOption == option
+                                    primary: _selectedHealthOption == entry.value
                                         ? Color(0xFF5C6BC0)
                                         : Colors.grey[300],
-                                    onPrimary: _selectedHealthOption == option
+                                    onPrimary: _selectedHealthOption == entry.value
                                         ? Colors.white
                                         : Colors.black87,
                                     padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -97,7 +117,7 @@ class _HealthAndFitnessPageState extends State<HealthAndFitnessPage> {
                                     ),
                                     elevation: 5,
                                   ),
-                                ))
+                                ).animate().fadeIn(delay: (300 * entry.key).ms).scale(delay: (300 * entry.key).ms))
                             .toList(),
                       ),
                       SizedBox(height: 25),
@@ -106,31 +126,33 @@ class _HealthAndFitnessPageState extends State<HealthAndFitnessPage> {
                           decoration: InputDecoration(
                             labelText: 'Amount',
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(15),
                             ),
                             filled: true,
                             fillColor: Colors.grey[100],
-                            prefixIcon: Icon(Icons.attach_money),
+                            prefixIcon: Icon(Icons.attach_money, color: Color(0xFF5C6BC0)),
+                            labelStyle: GoogleFonts.poppins(color: Color(0xFF5C6BC0)),
                           ),
                           keyboardType: TextInputType.number,
                           onChanged: (value) => setState(() => _amount = double.tryParse(value) ?? 0),
-                        ),
+                        ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2, end: 0),
                         SizedBox(height: 15),
                         DropdownButtonFormField<String>(
                           value: _frequency,
                           decoration: InputDecoration(
                             labelText: 'Frequency',
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(15),
                             ),
                             filled: true,
                             fillColor: Colors.grey[100],
-                            prefixIcon: Icon(Icons.repeat),
+                            prefixIcon: Icon(Icons.repeat, color: Color(0xFF5C6BC0)),
+                            labelStyle: GoogleFonts.poppins(color: Color(0xFF5C6BC0)),
                           ),
                           items: _frequencyOptions.map((String value) {
                             return DropdownMenuItem<String>(
                               value: value,
-                              child: Text(value),
+                              child: Text(value, style: GoogleFonts.poppins()),
                             );
                           }).toList(),
                           onChanged: (String? newValue) {
@@ -140,10 +162,14 @@ class _HealthAndFitnessPageState extends State<HealthAndFitnessPage> {
                               });
                             }
                           },
-                        ),
+                        ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2, end: 0),
                         SizedBox(height: 15),
-                        ElevatedButton(
-                          child: Text('Select Date: ${DateFormat('yyyy-MM-dd').format(_selectedDate)}'),
+                        ElevatedButton.icon(
+                          icon: Icon(Icons.calendar_today),
+                          label: Text(
+                            'Select Date: ${DateFormat('yyyy-MM-dd').format(_selectedDate)}',
+                            style: GoogleFonts.poppins(),
+                          ),
                           onPressed: () async {
                             final DateTime? picked = await showDatePicker(
                               context: context,
@@ -161,20 +187,19 @@ class _HealthAndFitnessPageState extends State<HealthAndFitnessPage> {
                             primary: Color(0xFF5C6BC0),
                             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(15),
                             ),
                             elevation: 5,
                           ),
-                        ),
+                        ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2, end: 0),
                       ],
                       SizedBox(height: 25),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          ElevatedButton(
-                            child: _isLoading
-                                ? CircularProgressIndicator(color: Colors.white)
-                                : Text('Create'),
+                          ElevatedButton.icon(
+                            icon: _isLoading ? CircularProgressIndicator(color: Colors.white) : Icon(Icons.save),
+                            label: Text('Create', style: GoogleFonts.poppins(fontSize: 16)),
                             onPressed: _isLoading
                                 ? null
                                 : () async {
@@ -193,8 +218,13 @@ class _HealthAndFitnessPageState extends State<HealthAndFitnessPage> {
                                               _frequency,
                                               _selectedDate);
                                           ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text('Health and Fitness entry added successfully')),
+                                            SnackBar(
+                                              content: Text('Health and Fitness entry added successfully'),
+                                              backgroundColor: Colors.green,
+                                            ),
                                           );
+                                          _animationController.forward();
+                                          await Future.delayed(Duration(milliseconds: 500));
                                           Navigator.push(
                                               context,
                                               MaterialPageRoute(builder: (context) => EducationPage()));
@@ -203,7 +233,7 @@ class _HealthAndFitnessPageState extends State<HealthAndFitnessPage> {
                                         }
                                       } catch (e) {
                                         ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('Error: ${e.toString()}')),
+                                          SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red),
                                         );
                                       } finally {
                                         setState(() {
@@ -212,7 +242,10 @@ class _HealthAndFitnessPageState extends State<HealthAndFitnessPage> {
                                       }
                                     } else {
                                       ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('Please select an option and enter an amount')),
+                                        SnackBar(
+                                          content: Text('Please select an option and enter an amount'),
+                                          backgroundColor: Colors.orange,
+                                        ),
                                       );
                                     }
                                   },
@@ -224,9 +257,10 @@ class _HealthAndFitnessPageState extends State<HealthAndFitnessPage> {
                               ),
                               elevation: 5,
                             ),
-                          ),
-                          ElevatedButton(
-                            child: Text('Next'),
+                          ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.2, end: 0),
+                          ElevatedButton.icon(
+                            icon: Icon(Icons.arrow_forward),
+                            label: Text('Next', style: GoogleFonts.poppins(fontSize: 16)),
                             onPressed: () {
                               Navigator.push(
                                   context,
@@ -240,7 +274,7 @@ class _HealthAndFitnessPageState extends State<HealthAndFitnessPage> {
                               ),
                               elevation: 5,
                             ),
-                          ),
+                          ).animate().fadeIn(duration: 600.ms).slideX(begin: 0.2, end: 0),
                         ],
                       ),
                     ],

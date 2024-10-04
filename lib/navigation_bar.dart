@@ -1,5 +1,6 @@
 import 'package:expenzo/analytics.dart';
 import 'package:expenzo/budget&bills/budget_added.dart';
+import 'package:expenzo/budget&bills/loan_budget.dart';
 import 'package:expenzo/dashboard.dart';
 import 'package:expenzo/reports_screen.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +20,7 @@ class _MainContainerState extends State<MainContainer> {
     BudgetDashboard(),
     ReportsScreen(),
     HomeScreen(),
-    BudgetEntryPage(),
+    LoanPaymentsPage(),
     SettingsScreen(),
   ];
 

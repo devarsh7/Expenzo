@@ -1,198 +1,262 @@
-// import 'package:flutter/material.dart';
-// import 'package:expenzo/budget&bills/budget_service.dart';
-// import 'package:expenzo/auth_service.dart';
-// import 'package:intl/intl.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:expenzo/budget&bills/budget_service.dart';
+import 'package:expenzo/auth_service.dart';
 
-// class LoanPaymentsPage extends StatefulWidget {
-//   @override
-//   _LoanPaymentsPageState createState() => _LoanPaymentsPageState();
-// }
+class LoanUpdatePage extends StatefulWidget {
+  @override
+  _LoanUpdatePageState createState() => _LoanUpdatePageState();
+}
 
-// class _LoanPaymentsPageState extends State<LoanPaymentsPage> {
-//   final AuthService _auth = AuthService();
-//   final BudgetService _budgetService = BudgetService();
+class _LoanUpdatePageState extends State<LoanUpdatePage> {
+  final AuthService _auth = AuthService();
+  final BudgetService _budgetService = BudgetService();
 
-//   String _selectedLoan = '';
-//   double _amount = 0;
-//   String _frequency = 'every month';
-//   DateTime _selectedDate = DateTime.now();
-//   bool _isLoading = false;
+  List<Map<String, dynamic>> _loanEntries = [];
+  bool _isLoading = true;
 
-//   final List<String> _loanOptions = [
-//     'Student Loans',
-//     'Personal Loans',
-//     'Payoff Credit cards'
-//   ];
+  @override
+  void initState() {
+    super.initState();
+    _loadLoanEntries();
+  }
 
-//   final List<String> _frequencyOptions = [
-//     'every week',
-//     'every month',
-//     'every 2 weeks',
-//     'every 3 weeks',
-//     'every 3 months',
-//     'every 6 months',
-//     'every 9 months',
-//     'every year'
-//   ];
+  Future<void> _loadLoanEntries() async {
+    setState(() => _isLoading = true);
+    String? userId = await _auth.getCurrentUserId();
+    if (userId != null) {
+      _loanEntries = await _budgetService.getLoanEntries(userId);
+    }
+    setState(() => _isLoading = false);
+  }
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('Loan Payments'),
-//         backgroundColor: Color(0xFF5C6BC0),
-//       ),
-//       body: SingleChildScrollView(
-//         padding: EdgeInsets.all(16),
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             Text('Select your loan type:',
-//                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-//             SizedBox(height: 15),
-//             Wrap(
-//               spacing: 10,
-//               runSpacing: 10,
-//               children: _loanOptions
-//                   .map((loan) => ElevatedButton(
-//                         child: Text(loan),
-//                         onPressed: () => setState(() => _selectedLoan = loan),
-//                         style: ElevatedButton.styleFrom(
-//                           primary: _selectedLoan == loan
-//                               ? Color(0xFF5C6BC0)
-//                               : Colors.grey[300],
-//                           onPrimary:
-//                               _selectedLoan == loan ? Colors.white : Colors.black87,
-//                           padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-//                           shape: RoundedRectangleBorder(
-//                             borderRadius: BorderRadius.circular(20),
-//                           ),
-//                         ),
-//                       ))
-//                   .toList(),
-//             ),
-//             SizedBox(height: 25),
-//             if (_selectedLoan.isNotEmpty) ...[
-//               TextFormField(
-//                 decoration: InputDecoration(
-//                   labelText: 'Amount',
-//                   border: OutlineInputBorder(
-//                     borderRadius: BorderRadius.circular(10),
-//                   ),
-//                   filled: true,
-//                   fillColor: Colors.grey[100],
-//                   prefixIcon: Icon(Icons.attach_money),
-//                 ),
-//                 keyboardType: TextInputType.number,
-//                 onChanged: (value) =>
-//                     setState(() => _amount = double.tryParse(value) ?? 0),
-//               ),
-//               SizedBox(height: 15),
-//               DropdownButtonFormField<String>(
-//                 value: _frequency,
-//                 decoration: InputDecoration(
-//                   labelText: 'Frequency',
-//                   border: OutlineInputBorder(
-//                     borderRadius: BorderRadius.circular(10),
-//                   ),
-//                   filled: true,
-//                   fillColor: Colors.grey[100],
-//                   prefixIcon: Icon(Icons.repeat),
-//                 ),
-//                 items: _frequencyOptions.map((String value) {
-//                   return DropdownMenuItem<String>(
-//                     value: value,
-//                     child: Text(value),
-//                   );
-//                 }).toList(),
-//                 onChanged: (String? newValue) {
-//                   if (newValue != null) {
-//                     setState(() {
-//                       _frequency = newValue;
-//                     });
-//                   }
-//                 },
-//               ),
-//               SizedBox(height: 15),
-//               ElevatedButton(
-//                 child: Text(
-//                     'Select Date: ${DateFormat('yyyy-MM-dd').format(_selectedDate)}'),
-//                 onPressed: () async {
-//                   final DateTime? picked = await showDatePicker(
-//                     context: context,
-//                     initialDate: _selectedDate,
-//                     firstDate: DateTime(2000),
-//                     lastDate: DateTime(2101),
-//                   );
-//                   if (picked != null && picked != _selectedDate) {
-//                     setState(() {
-//                       _selectedDate = picked;
-//                     });
-//                   }
-//                 },
-//                 style: ElevatedButton.styleFrom(
-//                   primary: Color(0xFF5C6BC0),
-//                   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-//                   shape: RoundedRectangleBorder(
-//                     borderRadius: BorderRadius.circular(10),
-//                   ),
-//                 ),
-//               ),
-//             ],
-//             SizedBox(height: 25),
-//             ElevatedButton(
-//               child: _isLoading
-//                   ? CircularProgressIndicator(color: Colors.white)
-//                   : Text('Update Loan Payment'),
-//               onPressed: _isLoading ? null : _updateLoanPayment,
-//               style: ElevatedButton.styleFrom(
-//                 primary: Color(0xFF5C6BC0),
-//                 padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-//                 shape: RoundedRectangleBorder(
-//                   borderRadius: BorderRadius.circular(20),
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
+  Future<void> _updateLoanEntry(int index, String description, double amount, DateTime date) async {
+    String? userId = await _auth.getCurrentUserId();
+    if (userId != null) {
+      await _budgetService.updateLoanEntry(
+        userId,
+        index,
+        description,
+        amount,
+        _loanEntries[index]['Frequency'],
+        date,
+      );
+      await _loadLoanEntries();
+    }
+  }
 
-//   Future<void> _updateLoanPayment() async {
-//     if (_selectedLoan.isNotEmpty && _amount > 0) {
-//       setState(() {
-//         _isLoading = true;
-//       });
-//       try {
-//         String? userId = await _auth.getCurrentUserId();
-//         if (userId != null) {
-//           await _budgetService.updateLoanEntry(
-//             userId,index
-//             _selectedLoan as int,
-//             _amount as String,
-//             _frequency as double, 
-//             _selectedDate as String
-//           );
-//           ScaffoldMessenger.of(context).showSnackBar(
-//             SnackBar(content: Text('Loan payment updated successfully')),
-//           );
-//         } else {
-//           throw Exception('User not logged in');
-//         }
-//       } catch (e) {
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           SnackBar(content: Text('Error: ${e.toString()}')),
-//         );
-//       } finally {
-//         setState(() {
-//           _isLoading = false;
-//         });
-//       }
-//     } else {
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(content: Text('Please select a loan type and enter an amount')),
-//       );
-//     }
-//   }
-// }
+  Future<void> _deleteLoanEntry(int index) async {
+    String? userId = await _auth.getCurrentUserId();
+    if (userId != null) {
+      List<Map<String, dynamic>> updatedEntries = List.from(_loanEntries);
+      updatedEntries.removeAt(index);
+      await _budgetService.updateLoanEntries(userId, updatedEntries);
+      await _loadLoanEntries();
+    }
+  }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Update Loan Payments'),
+        backgroundColor: Color(0xFF5C6BC0),
+      ),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              itemCount: _loanEntries.length,
+              itemBuilder: (context, index) {
+                final entry = _loanEntries[index];
+                return Card(
+                  margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  child: ListTile(
+                    title: Text(entry['Description']),
+                    subtitle: Text('${entry['Amount']} ${entry['Frequency']}'),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.edit),
+                          onPressed: () => _showUpdateDialog(context, index),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.delete),
+                          onPressed: () => _showDeleteDialog(context, index),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddDialog(context),
+        child: Icon(Icons.add),
+        backgroundColor: Color(0xFF5C6BC0),
+      ),
+    );
+  }
+
+  void _showUpdateDialog(BuildContext context, int index) {
+    final entry = _loanEntries[index];
+    final descriptionController = TextEditingController(text: entry['Description']);
+    final amountController = TextEditingController(text: entry['Amount'].toString());
+    DateTime selectedDate = DateTime.parse(entry['Date']);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Update Loan Payment'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: descriptionController,
+                  decoration: InputDecoration(labelText: 'Description'),
+                ),
+                TextField(
+                  controller: amountController,
+                  decoration: InputDecoration(labelText: 'Amount'),
+                  keyboardType: TextInputType.number,
+                ),
+                SizedBox(height: 16),
+                ElevatedButton(
+                  child: Text('Select Date: ${DateFormat('yyyy-MM-dd').format(selectedDate)}'),
+                  onPressed: () async {
+                    final DateTime? picked = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2101),
+                    );
+                    if (picked != null && picked != selectedDate) {
+                      setState(() {
+                        selectedDate = picked;
+                      });
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            TextButton(
+              child: Text('Update'),
+              onPressed: () {
+                _updateLoanEntry(
+                  index,
+                  descriptionController.text,
+                  double.parse(amountController.text),
+                  selectedDate,
+                );
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDeleteDialog(BuildContext context, int index) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Delete Loan Payment'),
+          content: Text('Are you sure you want to delete this loan payment?'),
+          actions: [
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            TextButton(
+              child: Text('Delete'),
+              onPressed: () {
+                _deleteLoanEntry(index);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showAddDialog(BuildContext context) {
+    final descriptionController = TextEditingController();
+    final amountController = TextEditingController();
+    DateTime selectedDate = DateTime.now();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Add New Loan Payment'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: descriptionController,
+                  decoration: InputDecoration(labelText: 'Description'),
+                ),
+                TextField(
+                  controller: amountController,
+                  decoration: InputDecoration(labelText: 'Amount'),
+                  keyboardType: TextInputType.number,
+                ),
+                SizedBox(height: 16),
+                ElevatedButton(
+                  child: Text('Select Date: ${DateFormat('yyyy-MM-dd').format(selectedDate)}'),
+                  onPressed: () async {
+                    final DateTime? picked = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2101),
+                    );
+                    if (picked != null && picked != selectedDate) {
+                      setState(() {
+                        selectedDate = picked;
+                      });
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            TextButton(
+              child: Text('Add'),
+              onPressed: () async {
+                String? userId = await _auth.getCurrentUserId();
+                if (userId != null) {
+                  await _budgetService.addLoanEntry(
+                    userId,
+                    descriptionController.text,
+                    double.parse(amountController.text),
+                    'monthly', // You might want to make this configurable
+                    selectedDate,
+                  );
+                  await _loadLoanEntries();
+                }
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+}

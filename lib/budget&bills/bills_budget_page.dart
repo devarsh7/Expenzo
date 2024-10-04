@@ -1,16 +1,19 @@
-import 'package:expenzo/budget&bills/loan_budget.dart';
+
+import 'package:expenzo/budget&bills/health_budget.dart';
 import 'package:expenzo/navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:expenzo/budget&bills/budget_service.dart';
 import 'package:expenzo/auth_service.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-class BillsBudgetPage extends StatefulWidget {
+class BillsPage extends StatefulWidget {
   @override
-  _BillsBudgetPageState createState() => _BillsBudgetPageState();
+  _BillsPageState createState() => _BillsPageState();
 }
 
-class _BillsBudgetPageState extends State<BillsBudgetPage> {
+class _BillsPageState extends State<BillsPage> with SingleTickerProviderStateMixin {
   final AuthService _auth = AuthService();
   final BudgetService _budgetService = BudgetService();
 
@@ -20,25 +23,28 @@ class _BillsBudgetPageState extends State<BillsBudgetPage> {
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
 
+  late AnimationController _animationController;
+
   final List<String> _billOptions = [
-    'Cell phone',
-    'Internet',
-    'Cable',
-    'Natural Gas',
-    'Power Bill',
-    'Water Bill'
+    'Rent/Mortgage', 'Utilities', 'Phone', 'Internet', 'Insurance', 'Other'
   ];
 
   final List<String> _frequencyOptions = [
-    'every week',
-    'every month',
-    'every 2 weeks',
-    'every 3 weeks',
-    'every 3 months',
-    'every 6 months',
-    'every 9 months',
-    'every year'
+    'every week', 'every month', 'every 2 weeks', 'every 3 weeks',
+    'every 3 months', 'every 6 months', 'every 9 months', 'every year'
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(vsync: this, duration: Duration(milliseconds: 500));
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,20 +54,19 @@ class _BillsBudgetPageState extends State<BillsBudgetPage> {
         child: Stack(
           children: [
             Positioned(
-              top: 60,
+              top: 40,
               left: 0,
               right: 0,
               child: Center(
-                child: Image.asset(
-                  'assets\\bills.png',
-                  height: 200,
-                  width: 200,
-                  fit: BoxFit.contain,
+                child: Icon(
+                  Icons.receipt_long,
+                  size: 100,
+                  color: Colors.white,
                 ),
-              ),
+              ).animate().fadeIn(duration: 600.ms).scale(delay: 300.ms),
             ),
             Positioned(
-              top: 280,
+              top: 260,
               left: 0,
               right: 0,
               bottom: 0,
@@ -86,22 +91,24 @@ class _BillsBudgetPageState extends State<BillsBudgetPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Select your bill type:',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold)),
+                          style: GoogleFonts.poppins(
+                              fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF5C6BC0)))
+                        .animate().fadeIn(duration: 600.ms).slideX(begin: -0.2, end: 0),
                       SizedBox(height: 15),
                       Wrap(
                         spacing: 10,
                         runSpacing: 10,
                         children: _billOptions
-                            .map((bill) => ElevatedButton(
-                                  child: Text(bill),
-                                  onPressed: () =>
-                                      setState(() => _selectedBill = bill),
+                            .asMap()
+                            .entries
+                            .map((entry) => ElevatedButton(
+                                  child: Text(entry.value),
+                                  onPressed: () => setState(() => _selectedBill = entry.value),
                                   style: ElevatedButton.styleFrom(
-                                    primary: _selectedBill == bill
+                                    primary: _selectedBill == entry.value
                                         ? Color(0xFF5C6BC0)
                                         : Colors.grey[300],
-                                    onPrimary: _selectedBill == bill
+                                    onPrimary: _selectedBill == entry.value
                                         ? Colors.white
                                         : Colors.black87,
                                     padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -110,7 +117,7 @@ class _BillsBudgetPageState extends State<BillsBudgetPage> {
                                     ),
                                     elevation: 5,
                                   ),
-                                ))
+                                ).animate().fadeIn(delay: (300 * entry.key).ms).scale(delay: (300 * entry.key).ms))
                             .toList(),
                       ),
                       SizedBox(height: 25),
@@ -119,32 +126,33 @@ class _BillsBudgetPageState extends State<BillsBudgetPage> {
                           decoration: InputDecoration(
                             labelText: 'Amount',
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(15),
                             ),
                             filled: true,
                             fillColor: Colors.grey[100],
-                            prefixIcon: Icon(Icons.attach_money),
+                            prefixIcon: Icon(Icons.attach_money, color: Color(0xFF5C6BC0)),
+                            labelStyle: GoogleFonts.poppins(color: Color(0xFF5C6BC0)),
                           ),
                           keyboardType: TextInputType.number,
-                          onChanged: (value) => setState(
-                              () => _amount = double.tryParse(value) ?? 0),
-                        ),
+                          onChanged: (value) => setState(() => _amount = double.tryParse(value) ?? 0),
+                        ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2, end: 0),
                         SizedBox(height: 15),
                         DropdownButtonFormField<String>(
                           value: _frequency,
                           decoration: InputDecoration(
                             labelText: 'Frequency',
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(15),
                             ),
                             filled: true,
                             fillColor: Colors.grey[100],
-                            prefixIcon: Icon(Icons.repeat),
+                            prefixIcon: Icon(Icons.repeat, color: Color(0xFF5C6BC0)),
+                            labelStyle: GoogleFonts.poppins(color: Color(0xFF5C6BC0)),
                           ),
                           items: _frequencyOptions.map((String value) {
                             return DropdownMenuItem<String>(
                               value: value,
-                              child: Text(value),
+                              child: Text(value, style: GoogleFonts.poppins()),
                             );
                           }).toList(),
                           onChanged: (String? newValue) {
@@ -154,11 +162,14 @@ class _BillsBudgetPageState extends State<BillsBudgetPage> {
                               });
                             }
                           },
-                        ),
+                        ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2, end: 0),
                         SizedBox(height: 15),
-                        ElevatedButton(
-                          child: Text(
-                              'Select Date: ${DateFormat('yyyy-MM-dd').format(_selectedDate)}'),
+                        ElevatedButton.icon(
+                          icon: Icon(Icons.calendar_today),
+                          label: Text(
+                            'Select Date: ${DateFormat('yyyy-MM-dd').format(_selectedDate)}',
+                            style: GoogleFonts.poppins(),
+                          ),
                           onPressed: () async {
                             final DateTime? picked = await showDatePicker(
                               context: context,
@@ -176,58 +187,48 @@ class _BillsBudgetPageState extends State<BillsBudgetPage> {
                             primary: Color(0xFF5C6BC0),
                             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(15),
                             ),
                             elevation: 5,
                           ),
-                        ),
+                        ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2, end: 0),
                       ],
                       SizedBox(height: 25),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          ElevatedButton(
-                            child: _isLoading
-                                ? CircularProgressIndicator(color: Colors.white)
-                                : Text('Create'),
+                          ElevatedButton.icon(
+                            icon: _isLoading ? CircularProgressIndicator(color: Colors.white) : Icon(Icons.save),
+                            label: Text('Create', style: GoogleFonts.poppins(fontSize: 16)),
                             onPressed: _isLoading
                                 ? null
                                 : () async {
-                                    if (_selectedBill.isNotEmpty &&
-                                        _amount > 0) {
+                                    if (_selectedBill.isNotEmpty && _amount > 0) {
                                       setState(() {
                                         _isLoading = true;
                                       });
                                       try {
-                                        String? userId =
-                                            await _auth.getCurrentUserId();
+                                        String? userId = await _auth.getCurrentUserId();
                                         if (userId != null) {
+                                          await _budgetService.checkAndInitializeBillsDocument(userId);
                                           await _budgetService.addBillEntry(
-                                              userId,
-                                              _selectedBill,
-                                              _amount,
-                                              _frequency,
-                                              _selectedDate);
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
+                                              userId, _selectedBill, _amount, _frequency, _selectedDate);
+                                          ScaffoldMessenger.of(context).showSnackBar(
                                             SnackBar(
-                                                content: Text(
-                                                    'Bill added successfully')),
+                                              content: Text('Bill added successfully'),
+                                              backgroundColor: Colors.green,
+                                            ),
                                           );
+                                          _animationController.forward();
+                                          await Future.delayed(Duration(milliseconds: 500));
                                           Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      LoanPaymentsPage()));
+                                              context, MaterialPageRoute(builder: (context) => HealthAndFitnessPage()));
                                         } else {
                                           throw Exception('User not logged in');
                                         }
                                       } catch (e) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(
-                                              content: Text(
-                                                  'Error: ${e.toString()}')),
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red),
                                         );
                                       } finally {
                                         setState(() {
@@ -235,11 +236,11 @@ class _BillsBudgetPageState extends State<BillsBudgetPage> {
                                         });
                                       }
                                     } else {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
+                                      ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
-                                            content: Text(
-                                                'Please select a bill type and enter an amount')),
+                                          content: Text('Please select a bill type and enter an amount'),
+                                          backgroundColor: Colors.orange,
+                                        ),
                                       );
                                     }
                                   },
@@ -251,15 +252,13 @@ class _BillsBudgetPageState extends State<BillsBudgetPage> {
                               ),
                               elevation: 5,
                             ),
-                          ),
-                          ElevatedButton(
-                            child: Text('Next'),
+                          ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.2, end: 0),
+                          ElevatedButton.icon(
+                            icon: Icon(Icons.arrow_forward),
+                            label: Text('Next', style: GoogleFonts.poppins(fontSize: 16)),
                             onPressed: () {
-                               Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      LoanPaymentsPage()));
+                              Navigator.push(
+                                  context, MaterialPageRoute(builder: (context) => HealthAndFitnessPage()));
                             },
                             style: ElevatedButton.styleFrom(
                               primary: Color(0xFF5C6BC0),
@@ -269,7 +268,7 @@ class _BillsBudgetPageState extends State<BillsBudgetPage> {
                               ),
                               elevation: 5,
                             ),
-                          ),
+                          ).animate().fadeIn(duration: 600.ms).slideX(begin: 0.2, end: 0),
                         ],
                       ),
                     ],

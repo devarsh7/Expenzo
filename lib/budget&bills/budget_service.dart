@@ -237,6 +237,16 @@ Future<List<Map<String, dynamic>>> getBudgetEntries(String userId) async {
     throw Exception('Failed to update loan entry');
   }
 }
+Future<void> updateLoanEntries(String userId, List<Map<String, dynamic>> updatedEntries) async {
+    try {
+      await _firestore.collection('UserBudget').doc(userId).collection('Loan').doc('details').update({
+        'loanEntries': updatedEntries,
+      });
+    } catch (e) {
+      print('Error updating loan entries: $e');
+      throw Exception('Failed to update loan entries');
+    }
+  }
 
 
   // Subscriptions
@@ -299,6 +309,7 @@ Future<List<Map<String, dynamic>>> getBudgetEntries(String userId) async {
       throw Exception('Failed to get subscription entries');
     }
   }
+  
 
   // Health and Fitness
   Future<void> addHealthAndFitnessEntry(String userId, String healthType, double amount, String frequency, DateTime date) async {
@@ -482,6 +493,8 @@ Future<List<Map<String, dynamic>>> getBudgetEntries(String userId) async {
       throw Exception('Failed to get kids expense entries');
     }
   }
+
+  
    Future<double> getAmountForCollection(
   String userId, 
   String collectionName,

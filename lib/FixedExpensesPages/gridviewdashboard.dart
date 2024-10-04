@@ -1,4 +1,5 @@
 
+import 'package:expenzo/FixedExpensesPages/loansview.dart';
 import 'package:flutter/material.dart';
 
 
@@ -58,10 +59,10 @@ class FixedExpensesGridPage extends StatelessWidget {
 
   void _navigateToExpensePage(BuildContext context, String categoryName) {
     if (categoryName == 'Loans') {
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(builder: (context) => LoanPaymentsPage()),
-      // );
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => LoanUpdatePage()),
+      );
     } else {
       // Navigate to other expense pages when implemented
       ScaffoldMessenger.of(context).showSnackBar(
